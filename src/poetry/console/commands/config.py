@@ -52,11 +52,14 @@ To remove a repository (repo is a short alias for repositories):
 
     @property
     def unique_config_values(self) -> dict[str, tuple[Any, Any]]:
-        unique_config_values = {
+        return {
             "cache-dir": (str, lambda val: str(Path(val))),
             "virtualenvs.create": (boolean_validator, boolean_normalizer),
             "virtualenvs.in-project": (boolean_validator, boolean_normalizer),
-            "virtualenvs.options.always-copy": (boolean_validator, boolean_normalizer),
+            "virtualenvs.options.always-copy": (
+                boolean_validator,
+                boolean_normalizer,
+            ),
             "virtualenvs.options.system-site-packages": (
                 boolean_validator,
                 boolean_normalizer,
@@ -67,9 +70,18 @@ To remove a repository (repo is a short alias for repositories):
                 boolean_normalizer,
             ),
             "virtualenvs.path": (str, lambda val: str(Path(val))),
-            "virtualenvs.prefer-active-python": (boolean_validator, boolean_normalizer),
-            "experimental.system-git-client": (boolean_validator, boolean_normalizer),
-            "installer.modern-installation": (boolean_validator, boolean_normalizer),
+            "virtualenvs.prefer-active-python": (
+                boolean_validator,
+                boolean_normalizer,
+            ),
+            "experimental.system-git-client": (
+                boolean_validator,
+                boolean_normalizer,
+            ),
+            "installer.modern-installation": (
+                boolean_validator,
+                boolean_normalizer,
+            ),
             "installer.parallel": (boolean_validator, boolean_normalizer),
             "installer.max-workers": (lambda val: int(val) > 0, int_normalizer),
             "virtualenvs.prompt": (str, lambda val: str(val)),
@@ -78,8 +90,6 @@ To remove a repository (repo is a short alias for repositories):
                 PackageFilterPolicy.normalize,
             ),
         }
-
-        return unique_config_values
 
     def handle(self) -> int:
         from pathlib import Path
@@ -125,17 +135,17 @@ To remove a repository (repo is a short alias for repositories):
             m = re.match(r"^repos?(?:itories)?(?:\.(.+))?", self.argument("key"))
             value: str | dict[str, Any]
             if m:
-                if not m.group(1):
-                    value = {}
-                    if config.get("repositories") is not None:
-                        value = config.get("repositories")
-                else:
-                    repo = config.get(f"repositories.{m.group(1)}")
+                if m[1]:
+                    repo = config.get(f"repositories.{m[1]}")
                     if repo is None:
-                        raise ValueError(f"There is no {m.group(1)} repository defined")
+                        raise ValueError(f"There is no {m[1]} repository defined")
 
                     value = repo
 
+                elif config.get("repositories") is not None:
+                    value = config.get("repositories")
+                else:
+                    value = {}
                 self.line(str(value))
             else:
                 if setting_key not in self.unique_config_values:
@@ -164,25 +174,23 @@ To remove a repository (repo is a short alias for repositories):
                 values,
             )
 
-        # handle repositories
-        m = re.match(r"^repos?(?:itories)?(?:\.(.+))?", self.argument("key"))
-        if m:
-            if not m.group(1):
+        if m := re.match(r"^repos?(?:itories)?(?:\.(.+))?", self.argument("key")):
+            if not m[1]:
                 raise ValueError("You cannot remove the [repositories] section")
 
             if self.option("unset"):
-                repo = config.get(f"repositories.{m.group(1)}")
+                repo = config.get(f"repositories.{m[1]}")
                 if repo is None:
-                    raise ValueError(f"There is no {m.group(1)} repository defined")
+                    raise ValueError(f"There is no {m[1]} repository defined")
 
-                config.config_source.remove_property(f"repositories.{m.group(1)}")
+                config.config_source.remove_property(f"repositories.{m[1]}")
 
                 return 0
 
             if len(values) == 1:
                 url = values[0]
 
-                config.config_source.add_property(f"repositories.{m.group(1)}.url", url)
+                config.config_source.add_property(f"repositories.{m[1]}.url", url)
 
                 return 0
 
@@ -191,21 +199,19 @@ To remove a repository (repo is a short alias for repositories):
                 "Example: poetry config repositories.foo https://bar.com"
             )
 
-        # handle auth
-        m = re.match(r"^(http-basic|pypi-token)\.(.+)", self.argument("key"))
-        if m:
+        if m := re.match(r"^(http-basic|pypi-token)\.(.+)", self.argument("key")):
             from poetry.utils.password_manager import PasswordManager
 
             password_manager = PasswordManager(config)
             if self.option("unset"):
-                if m.group(1) == "http-basic":
-                    password_manager.delete_http_password(m.group(2))
-                elif m.group(1) == "pypi-token":
-                    password_manager.delete_pypi_token(m.group(2))
+                if m[1] == "http-basic":
+                    password_manager.delete_http_password(m[2])
+                elif m[1] == "pypi-token":
+                    password_manager.delete_pypi_token(m[2])
 
                 return 0
 
-            if m.group(1) == "http-basic":
+            if m[1] == "http-basic":
                 if len(values) == 1:
                     username = values[0]
                     # Only username, so we prompt for password
@@ -220,8 +226,8 @@ To remove a repository (repo is a short alias for repositories):
                     username = values[0]
                     password = values[1]
 
-                password_manager.set_http_password(m.group(2), username, password)
-            elif m.group(1) == "pypi-token":
+                password_manager.set_http_password(m[2], username, password)
+            elif m[1] == "pypi-token":
                 if len(values) != 1:
                     raise ValueError(
                         f"Expected only one argument (token), got {len(values)}"
@@ -229,15 +235,15 @@ To remove a repository (repo is a short alias for repositories):
 
                 token = values[0]
 
-                password_manager.set_pypi_token(m.group(2), token)
+                password_manager.set_pypi_token(m[2], token)
 
             return 0
 
-        # handle certs
-        m = re.match(r"certificates\.([^.]+)\.(cert|client-cert)", self.argument("key"))
-        if m:
-            repository = m.group(1)
-            key = m.group(2)
+        if m := re.match(
+            r"certificates\.([^.]+)\.(cert|client-cert)", self.argument("key")
+        ):
+            repository = m[1]
+            key = m[2]
 
             if self.option("unset"):
                 config.auth_config_source.remove_property(
@@ -246,18 +252,17 @@ To remove a repository (repo is a short alias for repositories):
 
                 return 0
 
-            if len(values) == 1:
-                new_value: str | bool = values[0]
-
-                if key == "cert" and boolean_validator(values[0]):
-                    new_value = boolean_normalizer(values[0])
-
-                config.auth_config_source.add_property(
-                    f"certificates.{repository}.{key}", new_value
-                )
-            else:
+            if len(values) != 1:
                 raise ValueError("You must pass exactly 1 value")
 
+            new_value: str | bool = values[0]
+
+            if key == "cert" and boolean_validator(values[0]):
+                new_value = boolean_normalizer(values[0])
+
+            config.auth_config_source.add_property(
+                f"certificates.{repository}.{key}", new_value
+            )
             return 0
 
         raise ValueError(f"Setting {self.argument('key')} does not exist")

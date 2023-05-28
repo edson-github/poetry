@@ -238,8 +238,7 @@ class Git:
         except CalledProcessError:
             raise PoetryConsoleError(f"Failed to checkout {url} at '{revision}'")
 
-        repo = Repo(str(target))
-        return repo
+        return Repo(str(target))
 
     @classmethod
     def _clone(cls, url: str, refspec: GitRefSpec, target: Path) -> Repo:

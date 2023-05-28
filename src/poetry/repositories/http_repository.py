@@ -95,9 +95,7 @@ class HTTPRepository(CachedRepository):
             return PackageInfo.from_sdist(filepath)
 
     def _get_info_from_urls(self, urls: dict[str, list[str]]) -> PackageInfo:
-        # Prefer to read data from wheels: this is faster and more reliable
-        wheels = urls.get("bdist_wheel")
-        if wheels:
+        if wheels := urls.get("bdist_wheel"):
             # We ought just to be able to look at any of the available wheels to read
             # metadata, they all should give the same answer.
             #
@@ -263,7 +261,7 @@ class HTTPRepository(CachedRepository):
             response: requests.Response = self.session.get(
                 url, raise_for_status=False, timeout=REQUESTS_TIMEOUT
             )
-            if response.status_code in (401, 403):
+            if response.status_code in {401, 403}:
                 self._log(
                     f"Authorization error accessing {url}",
                     level="warning",
@@ -283,7 +281,7 @@ class HTTPRepository(CachedRepository):
         return response
 
     def _get_page(self, name: NormalizedName) -> LinkSource:
-        response = self._get_response(f"/{name}/")
-        if not response:
+        if response := self._get_response(f"/{name}/"):
+            return HTMLPage(response.url, response.text)
+        else:
             raise PackageNotFound(f"Package [{name}] not found.")
-        return HTMLPage(response.url, response.text)

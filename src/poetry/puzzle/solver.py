@@ -289,19 +289,17 @@ class PackageNode(DFSNode):
         children: list[PackageNode] = []
 
         for dependency in self.package.all_requires:
-            for pkg in self.packages:
-                if pkg.complete_name == dependency.complete_name and (
-                    dependency.constraint.allows(pkg.version)
-                ):
-                    children.append(
-                        PackageNode(
-                            pkg,
-                            self.packages,
-                            self,
-                            self.dep or dependency,
-                        )
-                    )
-
+            children.extend(
+                PackageNode(
+                    pkg,
+                    self.packages,
+                    self,
+                    self.dep or dependency,
+                )
+                for pkg in self.packages
+                if pkg.complete_name == dependency.complete_name
+                and (dependency.constraint.allows(pkg.version))
+            )
         return children
 
     def visit(self, parents: list[PackageNode]) -> None:

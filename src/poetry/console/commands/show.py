@@ -137,13 +137,14 @@ lists all packages available."""
     ) -> int:
         locked_packages = locked_repository.packages
         canonicalized_package = canonicalize_name(package)
-        pkg = None
-
-        for locked in locked_packages:
-            if locked.name == canonicalized_package:
-                pkg = locked
-                break
-
+        pkg = next(
+            (
+                locked
+                for locked in locked_packages
+                if locked.name == canonicalized_package
+            ),
+            None,
+        )
         if not pkg:
             raise ValueError(f"Package {package} not found")
 
@@ -324,12 +325,7 @@ lists all packages available."""
             ):
                 continue
 
-            if locked not in required_locked_packages:
-                if not show_all:
-                    continue
-
-                color = "black;options=bold"
-            else:
+            if locked in required_locked_packages:
                 installed_status = self.get_installed_status(
                     locked, installed_repo.packages
                 )
@@ -340,6 +336,11 @@ lists all packages available."""
                         # Non installed in non decorated mode
                         install_marker = " (!)"
 
+            elif not show_all:
+                continue
+
+            else:
+                color = "black;options=bold"
             if (
                 show_latest
                 and self.option("outdated")
@@ -373,8 +374,7 @@ lists all packages available."""
                     line += f" <fg={color}>{version:{latest_length}}</>"
 
             if write_why:
-                required_by = reverse_deps(locked, locked_repository)
-                if required_by:
+                if required_by := reverse_deps(locked, locked_repository):
                     content = ",".join(required_by.keys())
                     # subtract 6 for ' from '
                     line += f" from {content:{required_by_length - 6}}"
@@ -391,9 +391,9 @@ lists all packages available."""
                     remaining -= latest_length
 
                 if len(locked.description) > remaining:
-                    description = description[: remaining - 3] + "..."
+                    description = f"{description[:remaining - 3]}..."
 
-                line += " " + description
+                line += f" {description}"
 
             self.line(line)
 
@@ -420,10 +420,7 @@ lists all packages available."""
         why_package: Package | None = None,
     ) -> None:
         io.write(f"<c1>{package.pretty_name}</c1>")
-        description = ""
-        if package.description:
-            description = " " + package.description
-
+        description = f" {package.description}" if package.description else ""
         io.write_line(f" <b>{package.pretty_version}</b>{description}")
 
         if why_package is not None:
@@ -437,11 +434,11 @@ lists all packages available."""
 
         tree_bar = "├"
         total = len(dependencies)
+        level = 1
         for i, dependency in enumerate(dependencies, 1):
             if i == total:
                 tree_bar = "└"
 
-            level = 1
             color = self.colors[level]
             info = (
                 f"{tree_bar}── <{color}>{dependency.name}</{color}>"
@@ -472,23 +469,24 @@ lists all packages available."""
     ) -> None:
         previous_tree_bar = previous_tree_bar.replace("├", "│")
 
-        dependencies = []
-        for package in installed_packages:
-            if package.name == dependency.name:
-                dependencies = package.requires
-
-                break
-
+        dependencies = next(
+            (
+                package.requires
+                for package in installed_packages
+                if package.name == dependency.name
+            ),
+            [],
+        )
         dependencies = sorted(
             dependencies,
             key=lambda x: x.name,
         )
-        tree_bar = previous_tree_bar + "   ├"
+        tree_bar = f"{previous_tree_bar}   ├"
         total = len(dependencies)
         for i, dependency in enumerate(dependencies, 1):
             current_tree = packages_in_tree
             if i == total:
-                tree_bar = previous_tree_bar + "   └"
+                tree_bar = f"{previous_tree_bar}   └"
 
             color_ident = level % len(self.colors)
             color = self.colors[color_ident]
@@ -550,12 +548,14 @@ lists all packages available."""
                     provider = Provider(root, self.poetry.pool, NullIO())
                     return provider.search_for_direct_origin_dependency(dep)
 
-        allow_prereleases = False
-        for dep in requires:
-            if dep.name == package.name:
-                allow_prereleases = dep.allows_prereleases()
-                break
-
+        allow_prereleases = next(
+            (
+                dep.allows_prereleases()
+                for dep in requires
+                if dep.name == package.name
+            ),
+            False,
+        )
         name = package.name
         selector = VersionSelector(self.poetry.pool)
 
@@ -569,7 +569,7 @@ lists all packages available."""
         if latest.full_pretty_version == package.full_pretty_version:
             return "up-to-date"
 
-        constraint = parse_constraint("^" + package.pretty_version)
+        constraint = parse_constraint(f"^{package.pretty_version}")
 
         if constraint.allows(latest.version):
             # It needs an immediate semver-compliant upgrade
@@ -581,8 +581,11 @@ lists all packages available."""
     def get_installed_status(
         self, locked: Package, installed_packages: list[Package]
     ) -> str:
-        for package in installed_packages:
-            if locked.name == package.name:
-                return "installed"
-
-        return "not-installed"
+        return next(
+            (
+                "installed"
+                for package in installed_packages
+                if locked.name == package.name
+            ),
+            "not-installed",
+        )

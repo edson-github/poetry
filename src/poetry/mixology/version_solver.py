@@ -71,8 +71,7 @@ class DependencyCache:
         dependency: Dependency,
         key: DependencyCacheKey,
     ) -> list[DependencyPackage]:
-        cache_entries = self._cache[key]
-        if cache_entries:
+        if cache_entries := self._cache[key]:
             packages = [
                 p
                 for p in cache_entries[-1]
@@ -378,10 +377,11 @@ class VersionSolver:
                 term for term in incompatibility.terms if term != most_recent_term
             ]
 
-            for term in most_recent_satisfier.cause.terms:
-                if term.dependency != most_recent_satisfier.dependency:
-                    new_terms.append(term)
-
+            new_terms.extend(
+                term
+                for term in most_recent_satisfier.cause.terms
+                if term.dependency != most_recent_satisfier.dependency
+            )
             # The most_recent_satisfier may not satisfy most_recent_term on its own
             # if there are a collection of constraints on most_recent_term that
             # only satisfy it together. For example, if most_recent_term is

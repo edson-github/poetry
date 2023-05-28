@@ -258,7 +258,7 @@ def test_lock_path_dependency_deleted_from_pyproject(
 
     packages = locker.locked_repository().packages
 
-    assert {p.name for p in packages} == set()
+    assert not {p.name for p in packages}
 
 
 @pytest.mark.parametrize("is_no_update", [False, True])

@@ -87,7 +87,7 @@ class DirectOrigin:
 
         package = self.get_package_from_file(artifact)
         package.files = [
-            {"file": link.filename, "hash": "sha256:" + get_file_hash(artifact)}
+            {"file": link.filename, "hash": f"sha256:{get_file_hash(artifact)}"}
         ]
 
         package._source_type = "url"

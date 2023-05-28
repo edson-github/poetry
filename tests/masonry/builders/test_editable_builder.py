@@ -34,37 +34,27 @@ if TYPE_CHECKING:
 
 @pytest.fixture()
 def simple_poetry(fixture_dir: FixtureDirGetter) -> Poetry:
-    poetry = Factory().create_poetry(fixture_dir("simple_project"))
-
-    return poetry
+    return Factory().create_poetry(fixture_dir("simple_project"))
 
 
 @pytest.fixture()
 def project_with_include(fixture_dir: FixtureDirGetter) -> Poetry:
-    poetry = Factory().create_poetry(fixture_dir("with-include"))
-
-    return poetry
+    return Factory().create_poetry(fixture_dir("with-include"))
 
 
 @pytest.fixture()
 def extended_poetry(fixture_dir: FixtureDirGetter) -> Poetry:
-    poetry = Factory().create_poetry(fixture_dir("extended_project"))
-
-    return poetry
+    return Factory().create_poetry(fixture_dir("extended_project"))
 
 
 @pytest.fixture()
 def extended_without_setup_poetry(fixture_dir: FixtureDirGetter) -> Poetry:
-    poetry = Factory().create_poetry(fixture_dir("extended_project_without_setup"))
-
-    return poetry
+    return Factory().create_poetry(fixture_dir("extended_project_without_setup"))
 
 
 @pytest.fixture
 def with_multiple_readme_files(fixture_dir: FixtureDirGetter) -> Poetry:
-    poetry = Factory().create_poetry(fixture_dir("with_multiple_readme_files"))
-
-    return poetry
+    return Factory().create_poetry(fixture_dir("with_multiple_readme_files"))
 
 
 @pytest.fixture()
@@ -277,8 +267,7 @@ def test_builder_installs_proper_files_when_packages_configured(
     paths = set()
     with pth_file.open() as f:
         for line in f.readlines():
-            line = line.strip(os.linesep)
-            if line:
+            if line := line.strip(os.linesep):
                 paths.add(line)
 
     project_root = project_with_include.file.path.parent.resolve()

@@ -50,15 +50,13 @@ class InvalidPlugin:
 @pytest.fixture
 def poetry(fixture_dir: FixtureDirGetter, config: Config) -> Poetry:
     project_path = fixture_dir("simple_project")
-    poetry = Poetry(
+    return Poetry(
         project_path / "pyproject.toml",
         {},
         ProjectPackage("simple-project", "1.2.3"),
         Locker(project_path / "poetry.lock", {}),
         config,
     )
-
-    return poetry
 
 
 @pytest.fixture()

@@ -155,11 +155,7 @@ class Chef:
         context: Callable[
             [str], AbstractContextManager[zipfile.ZipFile | tarfile.TarFile]
         ]
-        if suffix == ".zip":  # noqa: SIM108
-            context = zipfile.ZipFile
-        else:
-            context = tarfile.open
-
+        context = zipfile.ZipFile if suffix == ".zip" else tarfile.open
         with temporary_directory() as tmp_dir:
             with context(archive.as_posix()) as archive_archive:
                 archive_archive.extractall(tmp_dir)

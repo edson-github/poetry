@@ -80,11 +80,10 @@ class WheelInstaller:
         script_kind: LauncherKind
         if not WINDOWS:
             script_kind = "posix"
+        elif platform.uname()[4].startswith("arm"):
+            script_kind = "win-arm64" if sys.maxsize > 2**32 else "win-arm"
         else:
-            if platform.uname()[4].startswith("arm"):
-                script_kind = "win-arm64" if sys.maxsize > 2**32 else "win-arm"
-            else:
-                script_kind = "win-amd64" if sys.maxsize > 2**32 else "win-ia32"
+            script_kind = "win-amd64" if sys.maxsize > 2**32 else "win-ia32"
 
         schemes = self._env.paths
         schemes["headers"] = schemes["include"]

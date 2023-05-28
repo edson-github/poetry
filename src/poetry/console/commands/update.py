@@ -39,8 +39,7 @@ class UpdateCommand(InstallerCommand):
     loggers = ["poetry.repositories.pypi_repository"]
 
     def handle(self) -> int:
-        packages = self.argument("packages")
-        if packages:
+        if packages := self.argument("packages"):
             self.installer.whitelist({name: "*" for name in packages})
 
         self.installer.only_groups(self.activated_groups)

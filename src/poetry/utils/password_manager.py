@@ -48,8 +48,7 @@ class PoetryKeyring:
         import keyring
 
         for name in names:
-            credential = keyring.get_credential(name, username)
-            if credential:
+            if credential := keyring.get_credential(name, username):
                 return HTTPAuthCredential(
                     username=credential.username, password=credential.password
                 )
@@ -180,8 +179,7 @@ class PasswordManager:
         :param repo_name:  Name of repository.
         :return: Returns a token as a string if found, otherwise None.
         """
-        token: str | None = self._config.get(f"pypi-token.{repo_name}")
-        if token:
+        if token := self._config.get(f"pypi-token.{repo_name}"):
             return token
 
         return self.keyring.get_password(repo_name, "__token__")

@@ -49,11 +49,13 @@ class CacheClearCommand(Command):
                 len(files) for _path, _dirs, files in os.walk(str(cache_dir))
             )
 
-            delete = self.confirm(f"<question>Delete {entries_count} entries?</>", True)
-            if not delete:
+            if delete := self.confirm(
+                f"<question>Delete {entries_count} entries?</>", True
+            ):
+                cache.flush()
+            else:
                 return 0
 
-            cache.flush()
         elif len(parts) == 2:
             raise RuntimeError(
                 "Only specifying the package name is not yet supported. "
@@ -67,11 +69,13 @@ class CacheClearCommand(Command):
                 self.line(f"No cache entries for {package}:{version}")
                 return 0
 
-            delete = self.confirm(f"Delete cache entry {package}:{version}", True)
-            if not delete:
+            if delete := self.confirm(
+                f"Delete cache entry {package}:{version}", True
+            ):
+                cache.forget(f"{package}:{version}")
+            else:
                 return 0
 
-            cache.forget(f"{package}:{version}")
         else:
             raise ValueError("Invalid cache key")
 

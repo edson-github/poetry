@@ -251,7 +251,7 @@ def isolated_environment(
     yield
 
     os.environ.clear()
-    os.environ.update(original_environ)
+    os.environ |= original_environ
 
 
 def make_entry_point_from_plugin(

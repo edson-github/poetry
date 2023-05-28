@@ -77,7 +77,7 @@ def setup(
     yield
 
     os.environ.clear()
-    os.environ.update(environ)
+    os.environ |= environ
 
 
 @pytest.fixture

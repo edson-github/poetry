@@ -41,7 +41,7 @@ class Wheel:
     def get_minimum_supported_index(self, tags: list[Tag]) -> int | None:
         indexes = [tags.index(t) for t in self.tags if t in tags]
 
-        return min(indexes) if indexes else None
+        return min(indexes, default=None)
 
     def is_supported_by_environment(self, env: Env) -> bool:
         return bool(set(env.supported_tags).intersection(self.tags))

@@ -268,20 +268,19 @@ class Executor:
                             f"  <fg=blue;options=bold>•</> {op_message}:"
                             " <fg=blue>Pending...</>"
                         )
-            else:
-                if self._should_write_operation(operation):
-                    if not operation.skipped:
-                        self._io.write_line(
-                            f"  <fg=blue;options=bold>•</> {op_message}"
-                        )
-                    else:
-                        self._io.write_line(
-                            f"  <fg=default;options=bold,dark>•</> {op_message}: "
-                            "<fg=default;options=bold,dark>Skipped</> "
-                            "<fg=default;options=dark>for the following reason:</> "
-                            f"<fg=default;options=bold,dark>{operation.skip_reason}</>"
-                        )
+            elif self._should_write_operation(operation):
+                if operation.skipped:
+                    self._io.write_line(
+                        f"  <fg=default;options=bold,dark>•</> {op_message}: "
+                        "<fg=default;options=bold,dark>Skipped</> "
+                        "<fg=default;options=dark>for the following reason:</> "
+                        f"<fg=default;options=bold,dark>{operation.skip_reason}</>"
+                    )
 
+                else:
+                    self._io.write_line(
+                        f"  <fg=blue;options=bold>•</> {op_message}"
+                    )
             try:
                 result = self._do_execute_operation(operation)
             except EnvCommandError as e:
@@ -808,7 +807,7 @@ class Executor:
 
     @staticmethod
     def _validate_archive_hash(archive: Path, package: Package) -> str:
-        archive_hash: str = "sha256:" + get_file_hash(archive)
+        archive_hash: str = f"sha256:{get_file_hash(archive)}"
         known_hashes = {f["hash"] for f in package.files if f["file"] == archive.name}
 
         if archive_hash not in known_hashes:
@@ -838,7 +837,7 @@ class Executor:
                 progress = ProgressBar(
                     self._sections[id(operation)], max=int(wheel_size)
                 )
-                progress.set_format(message + " <b>%percent%%</b>")
+                progress.set_format(f"{message} <b>%percent%%</b>")
 
         if progress:
             with self._lock:

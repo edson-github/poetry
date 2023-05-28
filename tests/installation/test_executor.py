@@ -122,9 +122,7 @@ def io_decorated() -> BufferedIO:
 
 @pytest.fixture
 def io_not_decorated() -> BufferedIO:
-    io = BufferedIO(decorated=False)
-
-    return io
+    return BufferedIO(decorated=False)
 
 
 @pytest.fixture
@@ -140,12 +138,12 @@ def mock_file_downloads(
     http: type[httpretty.httpretty], fixture_dir: FixtureDirGetter
 ) -> None:
     def callback(
-        request: HTTPrettyRequest, uri: str, headers: dict[str, Any]
-    ) -> list[int | dict[str, Any] | bytes]:
+            request: HTTPrettyRequest, uri: str, headers: dict[str, Any]
+        ) -> list[int | dict[str, Any] | bytes]:
         name = Path(urlparse(uri).path).name
 
         fixture = Path(__file__).parent.parent.joinpath(
-            "repositories/fixtures/pypi.org/dists/" + name
+            f"repositories/fixtures/pypi.org/dists/{name}"
         )
 
         if not fixture.exists():
@@ -902,13 +900,11 @@ def test_executor_should_write_pep610_url_references_for_non_wheel_urls(
         cached_wheel = fixture_dir("distributions") / "demo-0.1.0-py2.py3-none-any.whl"
 
         def mock_get_cached_archive_for_link_func(
-            _: Link, *, strict: bool, **__: Any
-        ) -> Path | None:
+                    _: Link, *, strict: bool, **__: Any
+                ) -> Path | None:
             if is_wheel_cached and not strict:
                 return cached_wheel
-            if is_sdist_cached:
-                return cached_sdist
-            return None
+            return cached_sdist if is_sdist_cached else None
 
         mocker.patch(
             "poetry.installation.executor.ArtifactCache.get_cached_archive_for_link",

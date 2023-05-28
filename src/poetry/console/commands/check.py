@@ -31,20 +31,16 @@ class CheckCommand(Command):
         unrecognized = sorted(
             project_classifiers - set(classifiers) - set(deprecated_classifiers)
         )
-        # Allow "Private ::" classifiers as recommended on PyPI and the packaging guide
-        # to allow users to avoid accidentally publishing private packages to PyPI.
-        # https://pypi.org/classifiers/
-        unrecognized = [u for u in unrecognized if not u.startswith("Private ::")]
-        if unrecognized:
+        if unrecognized := [
+            u for u in unrecognized if not u.startswith("Private ::")
+        ]:
             errors.append(f"Unrecognized classifiers: {unrecognized!r}.")
 
-        deprecated = sorted(
+        if deprecated := sorted(
             project_classifiers.intersection(set(deprecated_classifiers))
-        )
-        if deprecated:
+        ):
             for old_classifier in deprecated:
-                new_classifiers = deprecated_classifiers[old_classifier]
-                if new_classifiers:
+                if new_classifiers := deprecated_classifiers[old_classifier]:
                     message = (
                         f"Deprecated classifier {old_classifier!r}. "
                         f"Must be replaced by {new_classifiers!r}."

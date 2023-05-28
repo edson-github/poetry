@@ -35,11 +35,11 @@ class PyProjectTOML(BasePyProjectTOML):
     @property
     def data(self) -> TOMLDocument:
         if self._toml_document is None:
-            if not self.file.exists():
-                self._toml_document = TOMLDocument()
-            else:
+            if self.file.exists():
                 self._toml_document = self.file.read()
 
+            else:
+                self._toml_document = TOMLDocument()
         return self._toml_document
 
     def save(self) -> None:

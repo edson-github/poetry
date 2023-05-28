@@ -420,7 +420,7 @@ def test_search_for_directory_poetry(
     optional = [
         r for r in sorted(package.requires, key=lambda r: r.name) if r.is_optional()
     ]
-    assert required == []
+    assert not required
     assert optional == [
         get_dependency("cachy", ">=0.2.0"),
         get_dependency("pendulum", ">=1.4.4"),
@@ -451,7 +451,7 @@ def test_search_for_directory_poetry_with_extras(
     optional = [
         r for r in sorted(package.requires, key=lambda r: r.name) if r.is_optional()
     ]
-    assert required == []
+    assert not required
     assert optional == [
         get_dependency("cachy", ">=0.2.0"),
         get_dependency("pendulum", ">=1.4.4"),

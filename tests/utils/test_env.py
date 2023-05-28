@@ -71,10 +71,7 @@ class MockVirtualEnv(VirtualEnv):
 
     @property
     def sys_path(self) -> list[str]:
-        if self._sys_path is not None:
-            return self._sys_path
-
-        return super().sys_path
+        return self._sys_path if self._sys_path is not None else super().sys_path
 
 
 @pytest.fixture()
@@ -968,7 +965,7 @@ def test_env_has_symlinks_on_nix(tmp_path: Path, tmp_venv: VirtualEnv) -> None:
 def test_run_with_input(tmp_path: Path, tmp_venv: VirtualEnv) -> None:
     result = tmp_venv.run("python", "-", input_=MINIMAL_SCRIPT)
 
-    assert result == "Minimal Output" + os.linesep
+    assert result == f"Minimal Output{os.linesep}"
 
 
 def test_run_with_input_non_zero_return(tmp_path: Path, tmp_venv: VirtualEnv) -> None:
@@ -1360,7 +1357,7 @@ def test_create_venv_fails_if_current_python_version_is_not_supported(
     next_version = ".".join(
         str(c) for c in (current_version.major, current_version.minor + 1, 0)
     )
-    package_version = "~" + next_version
+    package_version = f"~{next_version}"
     poetry.package.python_versions = package_version
 
     with pytest.raises(InvalidCurrentPythonVersionError) as e:
@@ -1629,10 +1626,7 @@ def test_create_venv_accepts_fallback_version_w_nonzero_patchlevel(
     def mock_check_output(cmd: str, *args: Any, **kwargs: Any) -> str:
         if GET_PYTHON_VERSION_ONELINER in cmd:
             executable = cmd[0]
-            if "python3.5" in str(executable):
-                return "3.5.12"
-            else:
-                return "3.7.1"
+            return "3.5.12" if "python3.5" in str(executable) else "3.7.1"
         else:
             return "/usr/bin/python3.5"
 
@@ -1684,9 +1678,7 @@ def test_generate_env_name_uses_real_path(
 
 @pytest.fixture()
 def extended_without_setup_poetry(fixture_dir: FixtureDirGetter) -> Poetry:
-    poetry = Factory().create_poetry(fixture_dir("extended_project_without_setup"))
-
-    return poetry
+    return Factory().create_poetry(fixture_dir("extended_project_without_setup"))
 
 
 def test_build_environment_called_build_script_specified(

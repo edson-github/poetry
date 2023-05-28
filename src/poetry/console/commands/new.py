@@ -63,8 +63,7 @@ class NewCommand(Command):
         author = None
         if config.get("user.name"):
             author = config["user.name"]
-            author_email = config.get("user.email")
-            if author_email:
+            if author_email := config.get("user.email"):
                 author += f" <{author_email}>"
 
         poetry_config = Config.create()

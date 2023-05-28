@@ -33,7 +33,7 @@ class SourceShowCommand(Command):
             self.line("No sources configured for this project.")
             return 0
 
-        if names and not any(s.name.lower() in lower_names for s in sources):
+        if names and all(s.name.lower() not in lower_names for s in sources):
             self.line_error(
                 f"No source found with name(s): {', '.join(names)}",
                 style="error",

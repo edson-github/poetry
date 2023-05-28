@@ -43,12 +43,12 @@ class MockRepository(LegacyRepository):
         super().__init__("legacy", url="http://legacy.foo.bar", disable_cache=True)
 
     def _get_page(self, name: NormalizedName) -> SimpleRepositoryPage:
-        fixture = self.FIXTURES / (name + ".html")
+        fixture = self.FIXTURES / f"{name}.html"
         if not fixture.exists():
             raise PackageNotFound(f"Package [{name}] not found.")
 
         with fixture.open(encoding="utf-8") as f:
-            return SimpleRepositoryPage(self._url + f"/{name}/", f.read())
+            return SimpleRepositoryPage(f"{self._url}/{name}/", f.read())
 
     def _download(self, url: str, dest: Path) -> None:
         filename = Link(url).filename
@@ -512,11 +512,11 @@ def test_get_redirected_response_url(
     redirect_url = "http://legacy.redirect.bar"
 
     def get_mock(
-        url: str, raise_for_status: bool = True, timeout: int = 5
-    ) -> requests.Response:
+            url: str, raise_for_status: bool = True, timeout: int = 5
+        ) -> requests.Response:
         response = requests.Response()
         response.status_code = 200
-        response.url = redirect_url + "/foo"
+        response.url = f"{redirect_url}/foo"
         return response
 
     monkeypatch.setattr(repo.session, "get", get_mock)

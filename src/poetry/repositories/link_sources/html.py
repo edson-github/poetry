@@ -38,17 +38,13 @@ class HTMLPage(LinkSource):
                 pyrequire = unescape(pyrequire) if pyrequire else None
                 yanked_value = anchor.get("data-yanked")
                 yanked: str | bool
-                if yanked_value:
-                    yanked = unescape(yanked_value)
-                else:
-                    yanked = "data-yanked" in anchor
+                yanked = unescape(yanked_value) if yanked_value else "data-yanked" in anchor
                 link = Link(url, requires_python=pyrequire, yanked=yanked)
 
                 if link.ext not in self.SUPPORTED_FORMATS:
                     continue
 
-                pkg = self.link_package_data(link)
-                if pkg:
+                if pkg := self.link_package_data(link):
                     links[pkg.name][pkg.version].append(link)
 
         return links
