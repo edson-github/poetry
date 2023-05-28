@@ -43,7 +43,8 @@ def validate_object(obj: dict[str, Any]) -> list[str]:
 
     properties = {*schema["properties"].keys(), *core_schema["properties"].keys()}
     additional_properties = set(obj.keys()) - properties
-    for key in additional_properties:
-        errors.append(f"Additional properties are not allowed ('{key}' was unexpected)")
-
+    errors.extend(
+        f"Additional properties are not allowed ('{key}' was unexpected)"
+        for key in additional_properties
+    )
     return errors

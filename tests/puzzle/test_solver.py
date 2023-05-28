@@ -1315,12 +1315,12 @@ def test_solver_dense_dependencies(
     packages = []
     n = 22
     for i in range(n):
-        package_ai = get_package("a" + str(i), "1.0")
+        package_ai = get_package(f"a{str(i)}", "1.0")
         repo.add_package(package_ai)
         packages.append(package_ai)
-        package.add_dependency(Factory.create_dependency("a" + str(i), "^1.0"))
+        package.add_dependency(Factory.create_dependency(f"a{str(i)}", "^1.0"))
         for j in range(i):
-            package_ai.add_dependency(Factory.create_dependency("a" + str(j), "^1.0"))
+            package_ai.add_dependency(Factory.create_dependency(f"a{str(j)}", "^1.0"))
 
     transaction = solver.solve()
 
@@ -2073,8 +2073,7 @@ def test_solver_can_resolve_git_dependencies_with_ref(
 
     assert demo.source_type is not None
     assert demo.source_url is not None
-    git_config = {demo.source_type: demo.source_url}
-    git_config.update(ref)
+    git_config = {demo.source_type: demo.source_url} | ref
     package.add_dependency(Factory.create_dependency("demo", git_config))
 
     transaction = solver.solve()
@@ -2218,8 +2217,8 @@ def test_solver_does_not_trigger_new_resolution_on_duplicate_dependencies_if_onl
         ],
     )
 
-    assert str(ops[0].package.marker) == ""
-    assert str(ops[1].package.marker) == ""
+    assert not str(ops[0].package.marker)
+    assert not str(ops[1].package.marker)
 
 
 def test_solver_does_not_raise_conflict_for_locked_conditional_dependencies(

@@ -364,15 +364,11 @@ class SitePackages:
         results = []
 
         for candidate in candidates:
-            try:
+            with contextlib.suppress(OSError):
                 result = candidate, getattr(candidate, method)(*args, **kwargs)
                 if return_first:
                     return result
                 results.append(result)
-            except OSError:
-                # TODO: Replace with PermissionError
-                pass
-
         if results:
             return results
 
@@ -536,9 +532,7 @@ class EnvManager:
         version = ".".join(str(v) for v in sys.version_info[:precision])
 
         if prefer_active_python:
-            executable = EnvManager._detect_active_python(io)
-
-            if executable:
+            if executable := EnvManager._detect_active_python(io):
                 python_patch = decode(
                     subprocess.check_output(
                         [executable, "-c", GET_PYTHON_VERSION_ONELINER],
@@ -560,15 +554,11 @@ class EnvManager:
 
         envs_file = TOMLFile(venv_path / self.ENVS_FILE)
 
-        try:
+        with contextlib.suppress(ValueError):
             python_version = Version.parse(python)
             python = f"python{python_version.major}"
             if python_version.precision > 1:
                 python += f".{python_version.minor}"
-        except ValueError:
-            # Executable in PATH or full executable path
-            pass
-
         python_path = self._full_python_path(python)
         if python_path is None:
             raise PythonVersionNotFound(python)
@@ -711,11 +701,7 @@ class EnvManager:
 
             venv = venv_path / name
 
-            if not venv.exists():
-                return self.get_system_env()
-
-            return VirtualEnv(venv)
-
+            return self.get_system_env() if not venv.exists() else VirtualEnv(venv)
         if env_prefix is not None:
             prefix = Path(env_prefix)
             base_prefix = None
@@ -807,15 +793,11 @@ class EnvManager:
             if python in env_names:
                 raise IncorrectEnvError(python)
 
-        try:
+        with contextlib.suppress(ValueError):
             python_version = Version.parse(python)
             python = f"python{python_version.major}"
             if python_version.precision > 1:
                 python += f".{python_version.minor}"
-        except ValueError:
-            # Executable in PATH or full executable path
-            pass
-
         try:
             python_version_string = decode(
                 subprocess.check_output(
@@ -850,17 +832,11 @@ class EnvManager:
 
     def use_in_project_venv(self) -> bool:
         in_project: bool | None = self._poetry.config.get("virtualenvs.in-project")
-        if in_project is not None:
-            return in_project
-
-        return self.in_project_venv.is_dir()
+        return in_project if in_project is not None else self.in_project_venv.is_dir()
 
     def in_project_venv_exists(self) -> bool:
         in_project: bool | None = self._poetry.config.get("virtualenvs.in-project")
-        if in_project is False:
-            return False
-
-        return self.in_project_venv.is_dir()
+        return False if in_project is False else self.in_project_venv.is_dir()
 
     def create_venv(
         self,
@@ -945,7 +921,9 @@ class EnvManager:
                         supported_python
                     ):
                         continue
-                elif not supported_python.allows_any(parse_constraint(suffix + ".*")):
+                elif not supported_python.allows_any(
+                    parse_constraint(f"{suffix}.*")
+                ):
                     continue
 
                 python_name = f"python{suffix}"
@@ -1096,10 +1074,7 @@ class EnvManager:
         if prompt is not None:
             args.extend(["--prompt", prompt])
 
-        for flag, value in flags.items():
-            if value is True:
-                args.append(f"--{flag}")
-
+        args.extend(f"--{flag}" for flag, value in flags.items() if value is True)
         args.append(str(path))
 
         cli_result = virtualenv.cli_run(args)
@@ -1176,10 +1151,7 @@ class EnvManager:
             return Path(real_prefix)
 
         base_prefix = getattr(sys, "base_prefix", None)
-        if base_prefix is not None:
-            return Path(base_prefix)
-
-        return Path(sys.prefix)
+        return Path(base_prefix) if base_prefix is not None else Path(sys.prefix)
 
     @classmethod
     def generate_env_name(cls, name: str, cwd: str) -> str:
@@ -1265,17 +1237,12 @@ class Env:
         return GenericEnv(self.base, child_env=self)
 
     def _find_python_executable(self) -> None:
-        bin_dir = self._bin_dir
-
-        if self._is_windows and self._is_conda:
-            bin_dir = self._path
-
-        python_executables = sorted(
+        bin_dir = self._path if self._is_windows and self._is_conda else self._bin_dir
+        if python_executables := sorted(
             p.name
             for p in bin_dir.glob("python*")
             if re.match(r"python(?:\d+(?:\.\d+)?)?(?:\.exe)?$", p.name)
-        )
-        if python_executables:
+        ):
             executable = python_executables[0]
             if executable.endswith(".exe"):
                 executable = executable[:-4]
@@ -1283,12 +1250,11 @@ class Env:
             self._executable = executable
 
     def _find_pip_executable(self) -> None:
-        pip_executables = sorted(
+        if pip_executables := sorted(
             p.name
             for p in self._bin_dir.glob("pip*")
             if re.match(r"pip(?:\d+(?:\.\d+)?)?(?:\.exe)?$", p.name)
-        )
-        if pip_executables:
+        ):
             pip_executable = pip_executables[0]
             if pip_executable.endswith(".exe"):
                 pip_executable = pip_executable[:-4]
@@ -1320,9 +1286,7 @@ class Env:
         # we do not use as_posix() here due to issues with windows pathlib2
         # implementation
         path = Path(self._bin(self._pip_executable))
-        if not path.exists():
-            return self.pip_embedded
-        return path
+        return self.pip_embedded if not path.exists() else path
 
     @property
     def platform(self) -> str:
@@ -1354,15 +1318,11 @@ class Env:
 
     @property
     def usersite(self) -> Path | None:
-        if "usersite" in self.paths:
-            return Path(self.paths["usersite"])
-        return None
+        return Path(self.paths["usersite"]) if "usersite" in self.paths else None
 
     @property
     def userbase(self) -> Path | None:
-        if "userbase" in self.paths:
-            return Path(self.paths["userbase"])
-        return None
+        return Path(self.paths["userbase"]) if "userbase" in self.paths else None
 
     @property
     def purelib(self) -> Path:
@@ -1424,10 +1384,7 @@ class Env:
             return Path(real_prefix)
 
         base_prefix = getattr(sys, "base_prefix", None)
-        if base_prefix is not None:
-            return Path(base_prefix)
-
-        return Path(sys.prefix)
+        return Path(base_prefix) if base_prefix is not None else Path(sys.prefix)
 
     def get_version_info(self) -> tuple[Any, ...]:
         raise NotImplementedError()
@@ -1464,12 +1421,7 @@ class Env:
         return True
 
     def get_command_from_bin(self, bin: str) -> list[str]:
-        if bin == "pip":
-            # when pip is required we need to ensure that we fallback to
-            # embedded pip when pip is not available in the environment
-            return self.get_pip_command()
-
-        return [self._bin(bin)]
+        return self.get_pip_command() if bin == "pip" else [self._bin(bin)]
 
     def run(self, bin: str, *args: str, **kwargs: Any) -> str:
         cmd = self.get_command_from_bin(bin) + list(args)
@@ -1554,7 +1506,7 @@ class Env:
         Return path to the given executable.
         """
         if self._is_windows and not bin.endswith(".exe"):
-            bin_path = self._bin_dir / (bin + ".exe")
+            bin_path = self._bin_dir / f"{bin}.exe"
         else:
             bin_path = self._bin_dir / bin
 
@@ -1565,7 +1517,7 @@ class Env:
             # the root of the env path.
             if self._is_windows:
                 if not bin.endswith(".exe"):
-                    bin_path = self._path / (bin + ".exe")
+                    bin_path = self._path / f"{bin}.exe"
                 else:
                     bin_path = self._path / bin
 
@@ -1706,10 +1658,7 @@ class VirtualEnv(Env):
         output = output.strip()
 
         m = re.match("pip (.+?)(?: from .+)?$", output)
-        if not m:
-            return Version.parse("0.0")
-
-        return Version.parse(m.group(1))
+        return Version.parse("0.0") if not m else Version.parse(m[1])
 
     def get_paths(self) -> dict[str, str]:
         output = self.run_python_script(GET_PATHS)
@@ -1761,7 +1710,7 @@ class VirtualEnv(Env):
             yield
         finally:
             os.environ.clear()
-            os.environ.update(environ)
+            os.environ |= environ
 
     def _updated_path(self) -> str:
         return os.pathsep.join([str(self._bin_dir), os.environ.get("PATH", "")])
@@ -1796,26 +1745,23 @@ class GenericEnv(VirtualEnv):
                 break
 
             if not python_executable:
-                python_executables = sorted(
+                if python_executables := sorted(
                     p.name
                     for p in self._bin_dir.glob(python_pattern)
                     if re.match(r"python(?:\d+(?:\.\d+)?)?(?:\.exe)?$", p.name)
-                )
-
-                if python_executables:
+                ):
                     executable = python_executables[0]
                     if executable.endswith(".exe"):
                         executable = executable[:-4]
 
                     python_executable = executable
 
-            if not pip_executable:
-                pip_executables = sorted(
-                    p.name
-                    for p in self._bin_dir.glob(pip_pattern)
-                    if re.match(r"pip(?:\d+(?:\.\d+)?)?(?:\.exe)?$", p.name)
-                )
-                if pip_executables:
+            if pip_executables := sorted(
+                p.name
+                for p in self._bin_dir.glob(pip_pattern)
+                if re.match(r"pip(?:\d+(?:\.\d+)?)?(?:\.exe)?$", p.name)
+            ):
+                if not pip_executable:
                     pip_executable = pip_executables[0]
                     if pip_executable.endswith(".exe"):
                         pip_executable = pip_executable[:-4]
@@ -1877,16 +1823,12 @@ class NullEnv(SystemEnv):
     def _run(self, cmd: list[str], **kwargs: Any) -> str:
         self.executed.append(cmd)
 
-        if self._execute:
-            return super()._run(cmd, **kwargs)
-        return ""
+        return super()._run(cmd, **kwargs) if self._execute else ""
 
     def execute(self, bin: str, *args: str, **kwargs: Any) -> int:
         self.executed.append([bin, *list(args)])
 
-        if self._execute:
-            return super().execute(bin, *args, **kwargs)
-        return 0
+        return super().execute(bin, *args, **kwargs) if self._execute else 0
 
     def _bin(self, bin: str) -> str:
         return bin
@@ -1996,10 +1938,7 @@ class MockEnv(NullEnv):
 
     @property
     def sys_path(self) -> list[str]:
-        if self._sys_path is None:
-            return super().sys_path
-
-        return self._sys_path
+        return super().sys_path if self._sys_path is None else self._sys_path
 
     def get_marker_env(self) -> dict[str, Any]:
         if self._mock_marker_env is not None:

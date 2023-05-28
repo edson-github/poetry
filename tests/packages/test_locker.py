@@ -35,9 +35,7 @@ if TYPE_CHECKING:
 def locker() -> Locker:
     with tempfile.NamedTemporaryFile() as f:
         f.close()
-        locker = Locker(Path(f.name), {})
-
-        return locker
+        return Locker(Path(f.name), {})
 
 
 @pytest.fixture
@@ -1056,11 +1054,7 @@ content-hash = "115cf985d932e9bf5f540555bbdd75decbb62cac81e399375fc19f6277f8c1d8
 def test_content_hash_with_legacy_is_compatible(
     local_config: dict[str, list[str]], fresh: bool, locker: Locker
 ) -> None:
-    # old hash generation
-    relevant_content = {}
-    for key in locker._legacy_keys:
-        relevant_content[key] = local_config.get(key)
-
+    relevant_content = {key: local_config.get(key) for key in locker._legacy_keys}
     locker = locker.__class__(
         lock=locker.lock,
         local_config=local_config,

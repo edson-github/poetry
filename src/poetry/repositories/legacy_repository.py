@@ -132,7 +132,7 @@ class LegacyRepository(HTTPRepository):
         )
 
     def _get_page(self, name: NormalizedName) -> SimpleRepositoryPage:
-        response = self._get_response(f"/{name}/")
-        if not response:
+        if response := self._get_response(f"/{name}/"):
+            return SimpleRepositoryPage(response.url, response.text)
+        else:
             raise PackageNotFound(f"Package [{name}] not found.")
-        return SimpleRepositoryPage(response.url, response.text)

@@ -173,7 +173,6 @@ class Factory(BaseFactory):
             if repository.name.lower() == "pypi":
                 explicit_pypi = True
 
-        # Only add PyPI if no default repository is configured
         if not explicit_pypi:
             if pool.has_default():
                 if io.is_debug():
@@ -194,11 +193,11 @@ class Factory(BaseFactory):
                         "</warning>"
                     )
 
-                if pool.has_primary_repositories():
-                    pypi_priority = Priority.SECONDARY
-                else:
-                    pypi_priority = Priority.DEFAULT
-
+                pypi_priority = (
+                    Priority.SECONDARY
+                    if pool.has_primary_repositories()
+                    else Priority.DEFAULT
+                )
                 pool.add_repository(
                     PyPiRepository(disable_cache=disable_cache), priority=pypi_priority
                 )
@@ -277,8 +276,7 @@ class Factory(BaseFactory):
             ("maintainers", "maintainers"),
             ("keywords", "keywords"),
         }:
-            value = getattr(package, attr, None)
-            if value:
+            if value := getattr(package, attr, None):
                 content[key] = value
 
         readmes = []

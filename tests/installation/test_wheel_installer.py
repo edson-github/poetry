@@ -54,11 +54,10 @@ def test_default_installation_dist_info_dir_content(default_installation: Path) 
 
 def test_installer_file_contains_valid_version(default_installation: Path) -> None:
     installer_file = default_installation / "demo-0.1.0.dist-info" / "INSTALLER"
-    with open(installer_file) as f:
-        installer_content = f.read()
+    installer_content = Path(installer_file).read_text()
     match = re.match(r"Poetry (?P<version>.*)", installer_content)
     assert match
-    parse_constraint(match.group("version"))  # must not raise an error
+    parse_constraint(match["version"])
 
 
 def test_default_installation_no_bytecode(default_installation: Path) -> None:

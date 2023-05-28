@@ -56,12 +56,11 @@ def poetry_with_path_dependency(
 ) -> Poetry:
     source = fixture_dir("with_path_dependency")
 
-    poetry = project_factory(
+    return project_factory(
         name="foobar",
         source=source,
         use_test_locker=False,
     )
-    return poetry
 
 
 @pytest.fixture()

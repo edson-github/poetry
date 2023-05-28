@@ -35,11 +35,7 @@ class SearchResultParser(HTMLParser):
         return name in (attrs_map.get("class") or "").split()
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if not self._current:
-            if tag == "a" and self._match_class(attrs, "package-snippet"):
-                self._current = Result()
-                self._nest_anchors = 1
-        else:
+        if self._current:
             if tag == "span" and self._match_class(attrs, "package-snippet__name"):
                 self._data_callback = functools.partial(setattr, self._current, "name")
             elif tag == "span" and self._match_class(attrs, "package-snippet__version"):
@@ -54,6 +50,10 @@ class SearchResultParser(HTMLParser):
                 )
             elif tag == "a":
                 self._nest_anchors += 1
+
+        elif tag == "a" and self._match_class(attrs, "package-snippet"):
+            self._current = Result()
+            self._nest_anchors = 1
 
     def handle_data(self, data: str) -> None:
         if self._data_callback is not None:

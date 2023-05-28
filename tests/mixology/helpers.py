@@ -67,10 +67,9 @@ def check_solver_result(
                 return None
             raise
 
-    packages = {}
-    for package in solution.packages:
-        packages[package.name] = str(package.version)
-
+    packages = {
+        package.name: str(package.version) for package in solution.packages
+    }
     assert packages == result
 
     if tries is not None:

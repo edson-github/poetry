@@ -160,11 +160,10 @@ class FileCache(Generic[T]):
             logger.warning("Corrupt cache file was detected and cleaned up.")
             return None
 
-        if payload.expired:
-            self.forget(key)
-            return None
-        else:
+        if not payload.expired:
             return payload.data
+        self.forget(key)
+        return None
 
     def _path(self, key: str) -> Path:
         hash_type, parts_count = _HASHES[self.hash_type]
@@ -258,11 +257,10 @@ class ArtifactCache:
 
         for archive in archives:
             if strict:
-                # in strict mode return the original cached archive instead of the
-                # prioritized archive type.
                 if filename == archive.name:
                     return archive
-                continue
+                else:
+                    continue
 
             assert env is not None
 
@@ -282,10 +280,7 @@ class ArtifactCache:
                 (wheel.get_minimum_supported_index(env.supported_tags), archive),
             )
 
-        if not candidates:
-            return None
-
-        return min(candidates)[1]
+        return None if not candidates else min(candidates)[1]
 
     def _get_cached_archives(self, cache_dir: Path) -> list[Path]:
         archive_types = ["whl", "tar.gz", "tar.bz2", "bz2", "zip"]

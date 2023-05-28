@@ -88,11 +88,8 @@ class SetupReader:
         if parser.has_section("options"):
             if parser.has_option("options", "install_requires"):
                 for dep in parser.get("options", "install_requires").split("\n"):
-                    dep = dep.strip()
-                    if not dep:
-                        continue
-
-                    install_requires.append(dep)
+                    if dep := dep.strip():
+                        install_requires.append(dep)
 
             if parser.has_option("options", "python_requires"):
                 python_requires = parser.get("options", "python_requires")
@@ -102,11 +99,8 @@ class SetupReader:
                 extras_require[group] = []
                 deps = parser.get("options.extras_require", group)
                 for dep in deps.split("\n"):
-                    dep = dep.strip()
-                    if not dep:
-                        continue
-
-                    extras_require[group].append(dep)
+                    if dep := dep.strip():
+                        extras_require[group].append(dep)
 
         return {
             "name": name,
@@ -212,17 +206,14 @@ class SetupReader:
             return install_requires
 
         if isinstance(value, ast.List):
-            for el in value.elts:
-                if isinstance(el, ast.Str):
-                    install_requires.append(el.s)
+            install_requires.extend(el.s for el in value.elts if isinstance(el, ast.Str))
         elif isinstance(value, ast.Name):
             variable = self._find_variable_in_body(body, value.id)
 
             if variable is not None and isinstance(variable, ast.List):
-                for el in variable.elts:
-                    if isinstance(el, ast.Str):
-                        install_requires.append(el.s)
-
+                install_requires.extend(
+                    el.s for el in variable.elts if isinstance(el, ast.Str)
+                )
         return install_requires
 
     def _find_extras_require(
@@ -328,10 +319,10 @@ class SetupReader:
         return None
 
     def _find_in_call(self, call: ast.Call, name: str) -> Any | None:
-        for keyword in call.keywords:
-            if keyword.arg == name:
-                return keyword.value
-        return None
+        return next(
+            (keyword.value for keyword in call.keywords if keyword.arg == name),
+            None,
+        )
 
     def _find_call_kwargs(self, call: ast.Call) -> Any | None:
         kwargs = None
@@ -358,8 +349,11 @@ class SetupReader:
         return None
 
     def _find_in_dict(self, dict_: ast.Dict, name: str) -> ast.expr | None:
-        for key, val in zip(dict_.keys, dict_.values):
-            if isinstance(key, ast.Str) and key.s == name:
-                return val
-
-        return None
+        return next(
+            (
+                val
+                for key, val in zip(dict_.keys, dict_.values)
+                if isinstance(key, ast.Str) and key.s == name
+            ),
+            None,
+        )

@@ -50,7 +50,9 @@ class PyPiRepository(HTTPRepository):
         results = []
 
         response = requests.session().get(
-            self._base_url + "search", params={"q": query}, timeout=REQUESTS_TIMEOUT
+            f"{self._base_url}search",
+            params={"q": query},
+            timeout=REQUESTS_TIMEOUT,
         )
         parser = SearchResultParser()
         parser.feed(response.text)
@@ -188,7 +190,7 @@ class PyPiRepository(HTTPRepository):
         return data.asdict()
 
     def _get_page(self, name: NormalizedName) -> SimpleJsonPage:
-        source = self._base_url + f"simple/{name}/"
+        source = f"{self._base_url}simple/{name}/"
         info = self.get_package_info(name)
         return SimpleJsonPage(source, info)
 

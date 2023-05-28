@@ -356,9 +356,9 @@ class Installer:
 
     def _write_lock_file(self, repo: LockfileRepository, force: bool = False) -> None:
         if not self.is_dry_run() and (force or self._update):
-            updated_lock = self._locker.set_lock_data(self._package, repo.packages)
-
-            if updated_lock:
+            if updated_lock := self._locker.set_lock_data(
+                self._package, repo.packages
+            ):
                 self._io.write_line("")
                 self._io.write_line("<info>Writing lock file</>")
 

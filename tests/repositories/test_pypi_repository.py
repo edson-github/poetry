@@ -40,7 +40,7 @@ class MockRepository(PyPiRepository):
         super().__init__(url="http://foo.bar", disable_cache=True, fallback=fallback)
 
     def get_json_page(self, name: NormalizedName) -> SimpleJsonPage:
-        fixture = self.JSON_FIXTURES / (name + ".json")
+        fixture = self.JSON_FIXTURES / f"{name}.json"
 
         if not fixture.exists():
             raise PackageNotFound(f"Package [{name}] not found.")
@@ -55,9 +55,9 @@ class MockRepository(PyPiRepository):
         version = parts[1] if len(parts) == 3 else None
 
         if not version:
-            fixture = self.JSON_FIXTURES / (name + ".json")
+            fixture = self.JSON_FIXTURES / f"{name}.json"
         else:
-            fixture = self.JSON_FIXTURES / name / (version + ".json")
+            fixture = self.JSON_FIXTURES / name / f"{version}.json"
 
         if not fixture.exists():
             return None

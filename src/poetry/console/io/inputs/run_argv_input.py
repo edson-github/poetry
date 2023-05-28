@@ -43,7 +43,7 @@ class RunArgvInput(ArgvInput):
                 # Options with values:
                 # For long options, test for '--option=' at beginning
                 # For short options, test for '-o' at beginning
-                leading = value + "=" if value.startswith("--") else value
+                leading = f"{value}=" if value.startswith("--") else value
 
                 if token == value or leading != "" and token.startswith(leading):
                     return True

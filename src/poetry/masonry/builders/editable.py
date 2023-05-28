@@ -79,8 +79,7 @@ class EditableBuilder(Builder):
         added_files += self._add_scripts()
         self._add_dist_info(added_files)
 
-        path = self._path
-        return path
+        return self._path
 
     def _run_build_script(self, build_script: str) -> None:
         with build_environment(poetry=self._poetry, env=self._env, io=self._io) as env:
@@ -264,11 +263,11 @@ class EditableBuilder(Builder):
         hashsum = hashlib.sha256()
         with filepath.open("rb") as src:
             while True:
-                buf = src.read(1024 * 8)
-                if not buf:
-                    break
-                hashsum.update(buf)
+                if buf := src.read(1024 * 8):
+                    hashsum.update(buf)
 
+                else:
+                    break
             src.seek(0)
 
         return urlsafe_b64encode(hashsum.digest()).decode("ascii").rstrip("=")

@@ -54,9 +54,7 @@ class LinkSource:
     @property
     def packages(self) -> Iterator[Package]:
         for link in self.links:
-            pkg = self.link_package_data(link)
-
-            if pkg:
+            if pkg := self.link_package_data(link):
                 yield pkg
 
     @property
@@ -70,15 +68,14 @@ class LinkSource:
         name: str | None = None
         version_string: str | None = None
         version: Version | None = None
-        m = wheel_file_re.match(link.filename) or sdist_file_re.match(link.filename)
-
-        if m:
+        if m := wheel_file_re.match(link.filename) or sdist_file_re.match(
+            link.filename
+        ):
             name = m.group("name")
             version_string = m.group("ver")
         else:
             info, ext = link.splitext()
-            match = cls.VERSION_REGEX.match(info)
-            if match:
+            if match := cls.VERSION_REGEX.match(info):
                 name = match.group(1)
                 version_string = match.group(2)
 
@@ -91,10 +88,11 @@ class LinkSource:
                 )
                 return None
 
-        pkg = None
-        if name and version:
-            pkg = Package(name, version, source_url=link.url)
-        return pkg
+        return (
+            Package(name, version, source_url=link.url)
+            if name and version
+            else None
+        )
 
     def links_for_version(
         self, name: NormalizedName, version: Version
@@ -110,16 +108,13 @@ class LinkSource:
     def yanked(self, name: NormalizedName, version: Version) -> str | bool:
         reasons = set()
         for link in self.links_for_version(name, version):
-            if link.yanked:
-                if link.yanked_reason:
-                    reasons.add(link.yanked_reason)
-            else:
+            if not link.yanked:
                 # release is not yanked if at least one file is not yanked
                 return False
+            if link.yanked_reason:
+                reasons.add(link.yanked_reason)
         # if all files are yanked (or there are no files) the release is yanked
-        if reasons:
-            return "\n".join(sorted(reasons))
-        return True
+        return "\n".join(sorted(reasons)) if reasons else True
 
     @cached_property
     def _link_cache(self) -> LinkCache:

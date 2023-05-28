@@ -200,7 +200,7 @@ def test_no_directory_is_passed_to_installer(
     assert isinstance(tester.command, InstallerCommand)
     mocker.patch.object(tester.command.installer, "run", return_value=1)
 
-    if skip_directory_cli_value is True:
+    if skip_directory_cli_value:
         tester.execute("--no-directory")
     else:
         tester.execute()

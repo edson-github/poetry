@@ -12,9 +12,8 @@ def main() -> int:
             raise RuntimeError(f"sys.argv[0] is not an absolute path: {path}")
         if not path.exists():
             raise RuntimeError(f"sys.argv[0] does not exist: {path}")
-    else:
-        if path.is_absolute():
-            raise RuntimeError(f"sys.argv[0] is an absolute path: {path}")
+    elif path.is_absolute():
+        raise RuntimeError(f"sys.argv[0] is an absolute path: {path}")
 
     return 0
 

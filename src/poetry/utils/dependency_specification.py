@@ -78,18 +78,15 @@ class RequirementsParser:
             return specification
 
         extras = []
-        extras_m = re.search(r"\[([\w\d,-_ ]+)\]$", requirement)
-        if extras_m:
-            extras = [e.strip() for e in extras_m.group(1).split(",")]
+        if extras_m := re.search(r"\[([\w\d,-_ ]+)\]$", requirement):
+            extras = [e.strip() for e in extras_m[1].split(",")]
             requirement, _ = requirement.split("[")
 
-        specification = (
+        if specification := (
             self._parse_url(requirement)
             or self._parse_path(requirement)
             or self._parse_simple(requirement)
-        )
-
-        if specification:
+        ):
             if extras and "extras" not in specification:
                 specification["extras"] = extras
             return specification
@@ -104,9 +101,9 @@ class RequirementsParser:
         with contextlib.suppress(ValueError):
             dependency = Dependency.create_from_pep_508(requirement)
             specification: DependencySpec = {}
-            specification = dependency_to_specification(dependency, specification)
-
-            if specification:
+            if specification := dependency_to_specification(
+                dependency, specification
+            ):
                 specification["name"] = dependency.name
                 return specification
 
@@ -195,34 +192,29 @@ class RequirementsParser:
 
         if " " in pair:
             name, version = pair.split(" ", 1)
-            extras_m = re.search(r"\[([\w\d,-_]+)\]$", name)
-            if extras_m:
-                extras = [e.strip() for e in extras_m.group(1).split(",")]
+            if extras_m := re.search(r"\[([\w\d,-_]+)\]$", name):
+                extras = [e.strip() for e in extras_m[1].split(",")]
                 name, _ = name.split("[")
 
             require["name"] = name
             if version != "latest":
                 require["version"] = version
+        elif m := re.match(
+            r"^([^><=!: ]+)((?:>=|<=|>|<|!=|~=|~|\^).*)$", requirement.strip()
+        ):
+            name, constraint = m[1], m[2]
+            if extras_m := re.search(r"\[([\w\d,-_]+)\]$", name):
+                extras = [e.strip() for e in extras_m[1].split(",")]
+                name, _ = name.split("[")
+
+            require["name"] = name
+            require["version"] = constraint
         else:
-            m = re.match(
-                r"^([^><=!: ]+)((?:>=|<=|>|<|!=|~=|~|\^).*)$", requirement.strip()
-            )
-            if m:
-                name, constraint = m.group(1), m.group(2)
-                extras_m = re.search(r"\[([\w\d,-_]+)\]$", name)
-                if extras_m:
-                    extras = [e.strip() for e in extras_m.group(1).split(",")]
-                    name, _ = name.split("[")
+            if extras_m := re.search(r"\[([\w\d,-_]+)\]$", pair):
+                extras = [e.strip() for e in extras_m[1].split(",")]
+                pair, _ = pair.split("[")
 
-                require["name"] = name
-                require["version"] = constraint
-            else:
-                extras_m = re.search(r"\[([\w\d,-_]+)\]$", pair)
-                if extras_m:
-                    extras = [e.strip() for e in extras_m.group(1).split(",")]
-                    pair, _ = pair.split("[")
-
-                require["name"] = pair
+            require["name"] = pair
 
         if extras:
             require["extras"] = extras
